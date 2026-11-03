@@ -163,8 +163,13 @@ document.getElementById('btn-goto-review').addEventListener('click', () => {
   renderReviewScreen();
   showScreen('review');
 });
+document.getElementById('btn-goto-review-2').addEventListener('click', () => {
+  renderReviewScreen();
+  showScreen('review');
+});
+document.getElementById('btn-back-targetlist').addEventListener('click', () => showScreen('inspect'));
 
-// ---------- 점검 화면 렌더링 ----------
+// ---------- 점검대상 선택 화면 렌더링 ----------
 const targetList = document.getElementById('target-list');
 const progressFill = document.getElementById('progress-fill');
 const progressText = document.getElementById('progress-text');
@@ -176,26 +181,72 @@ function sanitizeName(s) {
 function renderInspectScreen() {
   targetList.innerHTML = '';
   state.targets.forEach((target, tIdx) => {
-    const details = document.createElement('details');
-    details.className = 'target-card';
-    details.open = tIdx === 0;
-
-    const summary = document.createElement('summary');
-    summary.innerHTML = `<span class="target-name">${escapeHtml(target)}</span><span class="badge" data-badge-for="${tIdx}"></span>`;
-    details.appendChild(summary);
-
-    const body = document.createElement('div');
-    body.className = 'target-body';
-
-    state.headers.forEach(item => {
-      body.appendChild(renderItemRow(target, item));
-    });
-
-    details.appendChild(body);
-    targetList.appendChild(details);
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'target-select-card';
+    card.dataset.targetIdx = tIdx;
+    card.innerHTML = `<span class="target-name">${escapeHtml(target)}</span><span class="badge" data-badge-for="${tIdx}"></span>`;
+    targetList.appendChild(card);
   });
   updateAllProgress();
 }
+
+targetList.addEventListener('click', (e) => {
+  const card = e.target.closest('.target-select-card');
+  if (!card) return;
+  openTargetDetail(Number(card.dataset.targetIdx));
+});
+
+// ---------- 선택한 대상의 점검항목 화면 렌더링 ----------
+let currentTargetIndex = 0;
+const itemList = document.getElementById('item-list');
+const targetDetailName = document.getElementById('target-detail-name');
+const targetProgressFill = document.getElementById('target-progress-fill');
+const targetProgressText = document.getElementById('target-progress-text');
+const btnPrevTarget = document.getElementById('btn-prev-target');
+const btnNextTarget = document.getElementById('btn-next-target');
+
+function openTargetDetail(idx) {
+  currentTargetIndex = idx;
+  renderTargetDetail();
+  showScreen('target');
+}
+
+function renderTargetDetail() {
+  const target = state.targets[currentTargetIndex];
+  targetDetailName.textContent = target;
+  itemList.innerHTML = '';
+  state.headers.forEach(item => {
+    itemList.appendChild(renderItemRow(target, item));
+  });
+  updateTargetDetailProgress();
+  btnPrevTarget.disabled = currentTargetIndex === 0;
+  btnNextTarget.disabled = currentTargetIndex === state.targets.length - 1;
+}
+
+function updateTargetDetailProgress() {
+  const target = state.targets[currentTargetIndex];
+  let done = 0;
+  state.headers.forEach(item => { if (state.records[target][item].status) done++; });
+  const total = state.headers.length;
+  targetProgressFill.style.width = total ? `${(done / total) * 100}%` : '0%';
+  targetProgressText.textContent = `${done}/${total} 완료`;
+}
+
+btnPrevTarget.addEventListener('click', () => {
+  if (currentTargetIndex > 0) {
+    currentTargetIndex--;
+    renderTargetDetail();
+    window.scrollTo(0, 0);
+  }
+});
+btnNextTarget.addEventListener('click', () => {
+  if (currentTargetIndex < state.targets.length - 1) {
+    currentTargetIndex++;
+    renderTargetDetail();
+    window.scrollTo(0, 0);
+  }
+});
 
 function escapeHtml(s) {
   const d = document.createElement('div');
@@ -253,7 +304,7 @@ function gpsText(photo) {
 }
 
 // 이벤트 위임 (상태버튼/값입력/메모/사진)
-targetList.addEventListener('click', async (e) => {
+itemList.addEventListener('click', async (e) => {
   const statusBtn = e.target.closest('.status-btn');
   if (statusBtn) {
     const row = statusBtn.closest('.item-row');
@@ -265,6 +316,7 @@ targetList.addEventListener('click', async (e) => {
     row.querySelector('.memo-wrap').hidden = rec.status !== '불량';
     saveState();
     updateAllProgress();
+    updateTargetDetailProgress();
     return;
   }
 
@@ -280,7 +332,7 @@ targetList.addEventListener('click', async (e) => {
   }
 });
 
-targetList.addEventListener('input', (e) => {
+itemList.addEventListener('input', (e) => {
   const row = e.target.closest('.item-row');
   if (!row) return;
   const { target, item } = row.dataset;
@@ -294,7 +346,7 @@ targetList.addEventListener('input', (e) => {
   }
 });
 
-targetList.addEventListener('change', async (e) => {
+itemList.addEventListener('change', async (e) => {
   if (!e.target.classList.contains('photo-input')) return;
   const file = e.target.files[0];
   if (!file) return;
@@ -448,11 +500,9 @@ document.getElementById('review-bad-list').addEventListener('click', (e) => {
 });
 
 function jumpToItem(target, item) {
-  renderInspectScreen();
-  showScreen('inspect');
+  openTargetDetail(state.targets.indexOf(target));
   const row = document.querySelector(`.item-row[data-target="${CSS.escape(target)}"][data-item="${CSS.escape(item)}"]`);
   if (row) {
-    row.closest('details').open = true;
     row.scrollIntoView({ behavior: 'smooth', block: 'center' });
     row.classList.add('flash');
     setTimeout(() => row.classList.remove('flash'), 1500);

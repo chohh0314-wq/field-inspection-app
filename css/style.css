@@ -115,25 +115,26 @@ textarea.text-input { min-height: 70px; resize: vertical; }
 .progress-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
 .progress-fill { height: 100%; background: var(--green); width: 0%; transition: width .2s; }
 
-/* 점검 대상 카드 */
+/* 점검대상 선택 목록 */
 .target-list { margin-top: 10px; }
-.target-card {
+.target-select-card {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
   margin-bottom: 10px;
-  overflow: hidden;
-}
-.target-card > summary {
-  padding: 14px 16px;
+  padding: 16px;
   font-weight: 700;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--text);
   cursor: pointer;
-  list-style: none;
+  text-align: left;
 }
-.target-card > summary::-webkit-details-marker { display: none; }
+.target-select-card:active { background: #f3f4f6; }
 .badge {
   font-size: 0.8rem;
   padding: 3px 8px;
@@ -144,6 +145,9 @@ textarea.text-input { min-height: 70px; resize: vertical; }
 }
 .badge.badge-partial { background: #fef3c7; color: #92400e; }
 .badge.badge-done { background: #d1fae5; color: #065f46; }
+
+/* 대상 상세(선택된 대상의 점검항목) */
+.nav-row { margin: 16px 0 24px; gap: 10px; }
 
 .target-body { padding: 0 12px 12px; }
 

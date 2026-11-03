@@ -42,7 +42,7 @@
     <button id="btn-start" class="btn primary big" disabled>점검 시작</button>
   </section>
 
-  <!-- 2. 점검 화면 -->
+  <!-- 2. 점검대상 선택 화면 -->
   <section id="screen-inspect" class="screen">
     <header class="top sticky">
       <div class="row between">
@@ -51,10 +51,30 @@
           <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
           <span id="progress-text" class="muted small"></span>
         </div>
-        <button class="btn icon" id="btn-goto-review">목록</button>
+        <button class="btn icon" id="btn-goto-review">결과</button>
       </div>
     </header>
     <div id="target-list" class="target-list"></div>
+  </section>
+
+  <!-- 2b. 선택한 대상의 점검항목 화면 -->
+  <section id="screen-target" class="screen">
+    <header class="top sticky">
+      <div class="row between">
+        <button class="btn icon" id="btn-back-targetlist">←</button>
+        <div class="progress-wrap">
+          <strong id="target-detail-name"></strong>
+          <div class="progress-bar"><div id="target-progress-fill" class="progress-fill"></div></div>
+          <span id="target-progress-text" class="muted small"></span>
+        </div>
+        <button class="btn icon" id="btn-goto-review-2">결과</button>
+      </div>
+    </header>
+    <div id="item-list" class="target-body"></div>
+    <div class="row nav-row">
+      <button class="btn secondary" id="btn-prev-target">◀ 이전 대상</button>
+      <button class="btn secondary" id="btn-next-target">다음 대상 ▶</button>
+    </div>
   </section>
 
   <!-- 3. 결과/다운로드 화면 -->
