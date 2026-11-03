@@ -1,0 +1,90 @@
+<meta charset="UTF-8">
+<title>현장 점검 앱</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a56db">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/style.css">
+
+<div id="app">
+
+  <!-- 1. 업로드 화면 -->
+  <section id="screen-upload" class="screen active">
+    <header class="top">
+      <h1>현장 점검 앱</h1>
+      <p class="sub">점검표 CSV를 업로드하면 점검항목이 자동으로 구성됩니다.</p>
+    </header>
+
+    <div id="resume-banner" class="card banner" hidden>
+      <p><strong id="resume-title"></strong></p>
+      <p class="muted" id="resume-sub"></p>
+      <div class="row">
+        <button id="btn-resume" class="btn primary">이어서 하기</button>
+        <button id="btn-discard" class="btn ghost">새로 시작</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <label class="field-label">1. 점검표 CSV 업로드</label>
+      <label class="file-drop" id="file-drop">
+        <input type="file" id="csv-input" accept=".csv,text/csv" hidden>
+        <span id="file-drop-text">CSV 파일 선택</span>
+      </label>
+      <div id="csv-preview" class="preview" hidden></div>
+      <p id="csv-error" class="error" hidden></p>
+    </div>
+
+    <div class="card">
+      <label class="field-label">2. 점검자 이름</label>
+      <input type="text" id="inspector-input" class="text-input" placeholder="이름을 입력하세요">
+    </div>
+
+    <button id="btn-start" class="btn primary big" disabled>점검 시작</button>
+  </section>
+
+  <!-- 2. 점검 화면 -->
+  <section id="screen-inspect" class="screen">
+    <header class="top sticky">
+      <div class="row between">
+        <button class="btn icon" id="btn-back-upload">←</button>
+        <div class="progress-wrap">
+          <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+          <span id="progress-text" class="muted small"></span>
+        </div>
+        <button class="btn icon" id="btn-goto-review">목록</button>
+      </div>
+    </header>
+    <div id="target-list" class="target-list"></div>
+  </section>
+
+  <!-- 3. 결과/다운로드 화면 -->
+  <section id="screen-review" class="screen">
+    <header class="top">
+      <div class="row between">
+        <button class="btn icon" id="btn-back-inspect">←</button>
+        <h1>점검 결과</h1>
+        <span></span>
+      </div>
+    </header>
+
+    <div class="card" id="review-summary"></div>
+
+    <div class="card" id="review-bad-list"></div>
+
+    <div class="card">
+      <label class="field-label">결과 내려받기</label>
+      <button id="btn-export-zip" class="btn primary big">전체 결과 내려받기 (ZIP: CSV+사진)</button>
+      <button id="btn-export-summary" class="btn secondary">요약 CSV만 받기</button>
+      <p class="muted small">불량 항목에 메모가 없으면 내려받기 전에 알려드립니다.</p>
+    </div>
+
+    <div class="card">
+      <button id="btn-reset" class="btn danger">새 점검 시작 (현재 기록 삭제)</button>
+    </div>
+  </section>
+
+</div>
+
+<script src="js/csv.js"></script>
+<script src="js/zip.js"></script>
+<script src="js/app.js"></script>
