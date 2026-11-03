@@ -1,4 +1,4 @@
-const CACHE_NAME = 'inspection-app-v2';
+const CACHE_NAME = 'inspection-app-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -27,16 +27,15 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// 네트워크 우선: 온라인이면 항상 최신 파일을 받아오고, 오프라인일 때만 캐시로 대체한다.
+// (예전 cache-first 방식은 업데이트가 배포돼도 폰에 옛 버전이 계속 남는 문제가 있었음)
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-        return res;
-      }).catch(() => cached);
-    })
+    fetch(event.request).then((res) => {
+      const copy = res.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+      return res;
+    }).catch(() => caches.match(event.request))
   );
 });
