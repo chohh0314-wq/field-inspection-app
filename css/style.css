@@ -185,6 +185,30 @@ textarea.text-input { min-height: 70px; resize: vertical; }
 .photo-preview img { max-width: 160px; border-radius: 8px; display: block; }
 .gps-info { margin: 6px 0; }
 
+.row > .add-btn { flex: 0 0 auto; width: auto; margin-top: 0; }
+
+.chip-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #e5edff;
+  color: var(--blue-dark);
+  border-radius: 999px;
+  padding: 6px 6px 6px 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.chip-remove {
+  background: transparent;
+  border: none;
+  color: var(--blue-dark);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
 .bad-item {
   padding: 10px 0;
   border-top: 1px solid var(--border);

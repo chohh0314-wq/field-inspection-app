@@ -34,6 +34,15 @@
       <p id="csv-error" class="error" hidden></p>
     </div>
 
+    <div class="card" id="manual-targets-card" hidden>
+      <label class="field-label">점검대상 입력 (CSV에 대상이 없어 직접 추가합니다)</label>
+      <div class="row">
+        <input type="text" id="manual-target-input" class="text-input" placeholder="예: 정압기1호">
+        <button type="button" id="btn-add-target" class="btn secondary add-btn">추가</button>
+      </div>
+      <div id="manual-target-list" class="chip-list"></div>
+    </div>
+
     <div class="card">
       <label class="field-label">2. 점검자 이름</label>
       <input type="text" id="inspector-input" class="text-input" placeholder="이름을 입력하세요">

@@ -32,7 +32,7 @@ function clearSavedState() {
 // ---------- CSV 업로드 처리 ----------
 function parseCsvToState(text, fileName) {
   const rows = parseCSV(text);
-  if (rows.length < 2) throw new Error('CSV에 데이터가 충분하지 않습니다.');
+  if (rows.length < 1) throw new Error('CSV에 데이터가 없습니다.');
 
   const header = rows[0];
   const firstColName = (header[0] || '구분').trim() || '구분';
@@ -55,8 +55,6 @@ function parseCsvToState(text, fileName) {
       records[target][item] = { value: '', status: null, memo: '', photo: null, timestamp: null };
     });
   }
-  if (targets.length === 0) throw new Error('점검 대상(행)을 찾을 수 없습니다.');
-
   return { firstColName, headers, targets, refMap, records, csvFileName: fileName };
 }
 
@@ -76,15 +74,29 @@ fileInput.addEventListener('change', async () => {
     const text = await readCsvFile(file);
     const parsed = parseCsvToState(text, file.name);
     parsedCsv = parsed;
+    manualTargets = [];
+    renderManualTargetList();
     fileDropText.textContent = file.name;
     csvPreview.hidden = false;
-    csvPreview.innerHTML =
-      `<strong>${parsed.targets.length}개</strong> 점검대상 · <strong>${parsed.headers.length}개</strong> 점검항목 감지됨` +
-      `<div class="muted small">대상 예: ${parsed.targets.slice(0, 3).join(', ')}${parsed.targets.length > 3 ? ' …' : ''}</div>` +
-      `<div class="muted small">항목 예: ${parsed.headers.slice(0, 3).join(', ')}${parsed.headers.length > 3 ? ' …' : ''}</div>`;
+    if (parsed.targets.length > 0) {
+      manualTargetsCard.hidden = true;
+      csvPreview.innerHTML =
+        `<strong>${parsed.targets.length}개</strong> 점검대상 · <strong>${parsed.headers.length}개</strong> 점검항목 감지됨` +
+        `<div class="muted small">대상 예: ${parsed.targets.slice(0, 3).join(', ')}${parsed.targets.length > 3 ? ' …' : ''}</div>` +
+        `<div class="muted small">항목 예: ${parsed.headers.slice(0, 3).join(', ')}${parsed.headers.length > 3 ? ' …' : ''}</div>`;
+    } else {
+      manualTargetsCard.hidden = false;
+      csvPreview.innerHTML =
+        `점검대상 없음 · <strong>${parsed.headers.length}개</strong> 점검항목 감지됨` +
+        `<div class="muted small">항목 예: ${parsed.headers.slice(0, 3).join(', ')}${parsed.headers.length > 3 ? ' …' : ''}</div>` +
+        `<div class="muted small">아래에서 점검대상을 직접 추가해주세요.</div>`;
+    }
     updateStartButton();
   } catch (e) {
     parsedCsv = null;
+    manualTargets = [];
+    manualTargetsCard.hidden = true;
+    renderManualTargetList();
     csvError.hidden = false;
     csvError.textContent = 'CSV를 읽을 수 없습니다: ' + e.message;
     updateStartButton();
@@ -93,14 +105,78 @@ fileInput.addEventListener('change', async () => {
 
 inspectorInput.addEventListener('input', updateStartButton);
 
+// ---------- 점검대상 직접 입력 (CSV에 대상이 없는 경우) ----------
+let manualTargets = [];
+const manualTargetsCard = document.getElementById('manual-targets-card');
+const manualTargetInput = document.getElementById('manual-target-input');
+const manualTargetList = document.getElementById('manual-target-list');
+
+function renderManualTargetList() {
+  manualTargetList.innerHTML = manualTargets.map((t, idx) => `
+    <span class="chip">${escapeHtml(t)}<button type="button" class="chip-remove" data-idx="${idx}">×</button></span>
+  `).join('');
+}
+
+document.getElementById('btn-add-target').addEventListener('click', addManualTarget);
+manualTargetInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    addManualTarget();
+  }
+});
+
+function addManualTarget() {
+  const name = manualTargetInput.value.trim();
+  if (!name) return;
+  if (manualTargets.includes(name)) {
+    manualTargetInput.value = '';
+    return;
+  }
+  manualTargets.push(name);
+  manualTargetInput.value = '';
+  renderManualTargetList();
+  updateStartButton();
+}
+
+manualTargetList.addEventListener('click', (e) => {
+  const btn = e.target.closest('.chip-remove');
+  if (!btn) return;
+  manualTargets.splice(Number(btn.dataset.idx), 1);
+  renderManualTargetList();
+  updateStartButton();
+});
+
 function updateStartButton() {
-  btnStart.disabled = !(parsedCsv && inspectorInput.value.trim());
+  const hasTargets = !!parsedCsv && (parsedCsv.targets.length > 0 || manualTargets.length > 0);
+  btnStart.disabled = !(hasTargets && inspectorInput.value.trim());
 }
 
 btnStart.addEventListener('click', () => {
   if (!parsedCsv) return;
+
+  let targets = parsedCsv.targets;
+  let refMap = parsedCsv.refMap;
+  let records = parsedCsv.records;
+
+  if (targets.length === 0) {
+    targets = manualTargets.slice();
+    refMap = {};
+    records = {};
+    targets.forEach(t => {
+      refMap[t] = {};
+      records[t] = {};
+      parsedCsv.headers.forEach(item => {
+        refMap[t][item] = '';
+        records[t][item] = { value: '', status: null, memo: '', photo: null, timestamp: null };
+      });
+    });
+  }
+
   state = {
-    ...parsedCsv,
+    firstColName: parsedCsv.firstColName,
+    headers: parsedCsv.headers,
+    targets, refMap, records,
+    csvFileName: parsedCsv.csvFileName,
     inspector: inspectorInput.value.trim(),
     startedAt: new Date().toISOString(),
   };
@@ -275,7 +351,7 @@ function renderItemRow(target, item) {
     </div>
     <input type="text" class="text-input value-input" placeholder="측정값 (선택, 예: 0.25MPa)" value="${escapeHtml(rec.value)}">
     <div class="memo-wrap" ${rec.status === '불량' ? '' : 'hidden'}>
-      <textarea class="text-input memo-input" placeholder="불량 내용/메모 (필수)">${escapeHtml(rec.memo)}</textarea>
+      <textarea class="text-input memo-input" placeholder="불량 내용/메모 (선택)">${escapeHtml(rec.memo)}</textarea>
     </div>
     <div class="photo-wrap">
       <label class="btn secondary photo-btn">
@@ -583,9 +659,11 @@ document.getElementById('btn-export-zip').addEventListener('click', () => {
 function validateBeforeExport() {
   const missing = findBadWithoutMemo();
   if (missing.length > 0) {
-    alert(`불량 항목 중 메모가 없는 항목이 ${missing.length}건 있습니다.\n첫 항목: ${missing[0].target} - ${missing[0].item}\n메모를 입력한 뒤 다시 시도해주세요.`);
-    jumpToItem(missing[0].target, missing[0].item);
-    return false;
+    const proceed = confirm(`불량 항목 중 메모가 없는 항목이 ${missing.length}건 있습니다.\n첫 항목: ${missing[0].target} - ${missing[0].item}\n메모 없이 계속 내려받을까요?`);
+    if (!proceed) {
+      jumpToItem(missing[0].target, missing[0].item);
+      return false;
+    }
   }
   return true;
 }
@@ -595,6 +673,9 @@ document.getElementById('btn-reset').addEventListener('click', () => {
   clearSavedState();
   state = null;
   parsedCsv = null;
+  manualTargets = [];
+  renderManualTargetList();
+  manualTargetsCard.hidden = true;
   fileInput.value = '';
   fileDropText.textContent = 'CSV 파일 선택';
   csvPreview.hidden = true;
